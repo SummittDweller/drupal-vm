@@ -1,0 +1,16 @@
+---
+# A list of synced folders, with the keys 'local_path', 'destination', and
+# a 'type' of [nfs|rsync|smb] (leave empty for slow native shares). See
+# http://docs.drupalvm.com/en/latest/extras/syncing-folders/ for more info.
+vagrant_synced_folders:
+  # The first synced folder will be used for the default Drupal installation, if
+  # any of the build_* settings are 'true'. By default the folder is set to
+  # the drupal-vm folder.
+  - local_path: .
+    destination: /var/www/drupalvm
+    type: nfs
+    create: true
+  - local_path: .
+    destination: /tmp/sync
+    type: nfs
+    create: true
