@@ -10,9 +10,10 @@ class style:
 backup = "wieting.tar.gz"
 cwd = os.getcwd()
 stick = "/Volumes/WIETING"
-server = "192.168.88.88"
+server = "wieting.dev"
 user = "vagrant"
 userAtServer = user + "@" + server
+drush_alias = "@wieting"
 
 # Get the current time and build a destination file name
 timeStamp = datetime.now().strftime('%Y-%m-%d_%H:%M')
@@ -21,7 +22,7 @@ destination = "/tmp/" + file
 local = cwd + "/" + file
 
 # Define the 'drush ard' command and run it remotely via ssh.  check_call returns 0 if no error, or a traceback if there is
-drush_ard = "drush @drupalvm ard default --yes --no-core --destination=" + destination + " --overwrite"
+drush_ard = "drush " + drush_alias + " ard default --yes --no-core --destination=" + destination + " --overwrite"
 print style.BOLD + "\nLaunching a remote 'drush ard' command via ssh..." + style.END
 error = subprocess.check_call([ "ssh", userAtServer, drush_ard ]);
 
