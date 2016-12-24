@@ -1,4 +1,7 @@
 ---
+vagrant_hostname: wieting.dev
+vagrant_machine_name: wieting
+
 # A list of synced folders, with the keys 'local_path', 'destination', and
 # a 'type' of [nfs|rsync|smb] (leave empty for slow native shares). See
 # http://docs.drupalvm.com/en/latest/extras/syncing-folders/ for more info.
@@ -14,3 +17,22 @@ vagrant_synced_folders:
     destination: /tmp/sync
     type: nfs
     create: true
+
+extra_packages:
+  - sqlite
+  - nano
+  - figlet
+
+drupal_composer_dependencies:
+  - "drupal/devel:*"
+  - "drupal/bootstrap:*"
+  - "drupal/pathauto:*"
+  - "drupal/calendar:*"
+  - "drupal/views_templates:*"
+  - "drupal/google_analytics:*"
+  - "drupal/google_analytics_reports:*"
+  - "drupal/embed:*"
+  - "drupal/entity_embed:*"
+  - "drupal/taxonomy_menu:*"
+  - "drupal/blog:*"
+
