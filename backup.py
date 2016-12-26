@@ -1,77 +1,69 @@
+""" backup.py
+
+Use this Python script from the command line (terminal) in combination with restore.py.  This script will create a
+ *.tar.gz containing an SQL dump and a tar of vars.site_path files.
+
+This script depends on vars.py, and you must define your site and user parameters in vars.py before performing
+  a backup/restore operation.
+
+"""
+
+from colorama import init
+from colorama import Style, Fore, Back
+import vars
 import os
 import subprocess
+import sys
 from datetime import datetime
 
-class style:
-   BOLD = '\033[1m'
-   END = '\033[0m'
-
-# Define some critica vars
-backup = "wieting.tar.gz"
-cwd = os.getcwd()
-stick = "/Volumes/WIETING"
-server = "wieting.dev"
-user = "vagrant"
-userAtServer = user + "@" + server
-drush_alias = "@wieting"
+init()
 
 # Get the current time and build a destination file name
-timeStamp = datetime.now().strftime('%Y-%m-%d_%H:%M')
-file = backup + "_" + str(timeStamp)
-destination = "/tmp/" + file
+timeStamp = datetime.now().strftime('%Y-%m-%d_%H-%M')
+file = vars.backup + "_" + str(timeStamp)
+destination = "/home/" + vars.user + "/" + file
+userAtServer = vars.user + "@" + vars.server
+
+cwd = os.getcwd()
 local = cwd + "/" + file
 
-# Define the 'drush ard' command and run it remotely via ssh.  check_call returns 0 if no error, or a traceback if there is
-drush_ard = "drush " + drush_alias + " ard default --yes --no-core --destination=" + destination + " --overwrite"
-print style.BOLD + "\nLaunching a remote 'drush ard' command via ssh..." + style.END
-error = subprocess.check_call([ "ssh", userAtServer, drush_ard ]);
+# Cleanup the remote server before beginning
+command = "rm -f /home/" + vars.user + "/" + vars.server + ".sql /home/" + vars.user + "/" + vars.backup
+args = [ "ssh", userAtServer, command ]
+print Style.BRIGHT + "\nLaunching " + Fore.GREEN + " ".join(args) + Fore.RESET + " to clean up... " + Style.RESET_ALL
+error = subprocess.check_call(args);
 
-# No problem...rsync the file back to the host
+# Try 'drush sql-dump' instead of 'drush ard', it's easier to control
+command = "sql-dump --result-file=" + vars.site_path + "/files/" + vars.server + ".sql --skip-tables-key=common"
+args = [ "ssh", userAtServer, vars.drush, vars.drush_alias, command ]
+print Style.BRIGHT + "\nLaunching " + Fore.GREEN + " ".join(args) + Fore.RESET +" to dump the database... " + Style.RESET_ALL
+error = subprocess.check_call(args);
+
+# Follow up with a 'tar' command under better control
+skip = [ "config_*", "*/css/*", "*/js/*", "*/php/*", "*services.yml", "*settings.php" ]
+exclude = " --exclude=".join(skip)
+command = "tar -czvf " + destination + " -C " + vars.site_path + " . /home/" + vars.user + "/*.sql --exclude=" + exclude
+command = "tar -czvf " + destination + " -C " + vars.site_path + " . --exclude=" + exclude
+args = [ "ssh", userAtServer, command ]
+print Style.BRIGHT + "\nLaunching " + Fore.GREEN + " ".join(args) + Fore.RESET + " to create a backup... " + Style.RESET_ALL
+error = subprocess.check_call(args);
+
+# No problems thus far?...rsync the file back to the host
 args = [ "rsync", "-aruvi", userAtServer + ":" + destination, cwd ]
-print style.BOLD + "\nRunning '" + ' '.join(args) + "' to copy the backup to your host..."  + style.END
+print Style.BRIGHT + "\nRunning " + Fore.GREEN + ' '.join(args) + Fore.RESET + " to copy the backup to your host..."  + Style.RESET_ALL
 error = subprocess.check_call(args)
 
 # If stick is mounted, copy the backup there too
-if os.path.isdir(stick):
-    args = ["rsync", "-aruvi", local, stick]
-    print style.BOLD + "\nRunning '" + ' '.join(args) + "' to copy the backup to your mounted " + stick + " volume..."  + style.END
+if os.path.isdir(vars.stick):
+    args = ["rsync", "-aruvi", local, vars.stick]
+    print Style.BRIGHT + "\nRunning " + Fore.GREEN + ' '.join(args) + Fore.RESET + " to copy the backup to your mounted " + vars.stick + " volume..."  + Style.RESET_ALL
     error = subprocess.check_call(args)
-    files = filter(os.path.isfile, os.listdir(stick))
-    print "\nContents of " + stick + " includes: "
+    files = filter(os.path.isfile, os.listdir(vars.stick))
+    print "\nContents of " + vars.stick + " includes: "
     for f in files:
         print "  " + f
     print "\n\n"
 
 else:
-    print style.BOLD + "\nMount a portable drive at " + stick + " and use "
-    print "  'rsync -aruvi " + local + " " + stick + "' to copy the backup there." + style.END
-
-"""
-# Use 'rootstalk_site_backup' from your HOST machine to backup a copy of the existing default database and files.
-alias vm_create_backup="
-  time=$(date '+%Y.%m.%d-%H-%M'); 
-  dest=/tmp/${time}/rs.tar.gz;
-  ssh dguser@rootstalk.grinnell.edu \"drush @drupalvm ard default --yes --no-core --destination=/tmp/${dest}/rs.tar.gz --overwritedrush @drupalvm ard default --yes --no-core --destination=/tmp/${dest}/rs.tar.gz --overwrite\" "  
-alias rsync_file_message1="printf \"Transfering backup to the current directory on the host (your local machine)... \n\""
-alias rsync_file_message2="printf \"Transfering backup to '/Volumes/ROOTSTALK' directory on your local machine... \n\""
-alias no_ROOTSTALK_device="printf \"Attention: Mount a USB stick named ROOTSTALK and run 'save_backups_to_ROOTSTALK' if you wish to backup to a device. \n\""
-alias backup_complete_message="printf \"File backup complete!!! The contents of the flash drive include: \n\""
-alias vm_pull_to_host1="rsync_file_message1; rsync -aruvi dguser@rootstalk.grinnell.edu:/tmp/*/rs.tar.gz . "
-alias save_backups_to_ROOTSTALK="
-  rsync_file_message2; 
-  rsync -aruvi */rs.tar.gz /Volumes/ROOTSTALK/; 
-  backup_complete_message; 
-  ls /Volumes/ROOTSTALK;"
-alias rootstalk_site_backup="
-  vm_create_backup; 
-  vm_pull_to_host1; 
-  if [ -d \"/Volumes/ROOTSTALK\" ]; then
-    save_backups_to_ROOTSTALK
-  else
-    no_ROOTSTALK_device
-  fi"
-# Use rootstalk_vm_restore from your HOST machine to restore a copy fo the default database and files.
-alias vm_push_to_vm="rsync -aruvi ./rootstalk.tar.gz dguser@dgdevx.grinnell.edu:/var/www/html/drupal/"
-alias vm_restore_backup="ssh dguser@rootstalk.grinnell.edu \"cd /var/www/html/drupal; drush arr -v rootstalk.tar.gz default --overwrite --tar-options='vz'; cd web/sites/default; drush cr all\""
-alias rootstalk_vm_restore="vm_push_to_vm; vm_restore_backup"
-"""
+    print Style.BRIGHT + "\nMount a portable drive at " + vars.stick + " and use "
+    print Fore.GREEN + "  'rsync -aruvi " + local + " " + vars.stick + "' " + Fore.RESET + "to copy the backup there.\n\n" + Style.RESET_ALL
