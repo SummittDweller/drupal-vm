@@ -9,6 +9,6 @@ backup = "wieting.tar.gz"                                         # name the bac
 stick = "/Volumes/WIETING"                                        # name of a mounted drive to accept a copy of the backup
 server = "wieting.dev"                                            # the remote server name
 user = "vagrant"                                                  # admin user on the remote server
-drush_alias = "@wieting"                                          # drush alias for the remote site
+drush_alias = "@wieting.wieting.dev"                              # drush alias for the remote site
 site_path = "/var/www/drupalvm/drupal/web/sites/default"          # path to the Drupal site on the remote server
 drush = "/var/www/drupalvm/drupal/vendor/drush/drush/drush.php"   # remote server path to drush
