@@ -30,10 +30,16 @@ args = [ "rsync", "-aruvi", file_path, userAtServer + ":" + path ]
 print Style.BRIGHT + "\nRunning '" + Fore.GREEN + ' '.join(args) + Fore.RESET + "' to copy the backup to the server..."  + Style.RESET_ALL
 error = subprocess.check_call(args)
 
-# Extract everything from the tar file
-command = "tar -xzvf " + path + " -C " + vars.site_path
+# Extract everything from the tar file to /tmp/restore
+command = "mkdir /tmp/restore; tar -xzvf " + path + " -C /tmp/restore" 
 args = [ "ssh", userAtServer, command ]
-print Style.BRIGHT + "\nLaunching " + Fore.GREEN + " ".join(args) + Fore.RESET + " to extract files from the backup... " + Style.RESET_ALL
+print Style.BRIGHT + "\nLaunching " + Fore.GREEN + " ".join(args) + Fore.RESET + " to extract files from the backup to /tmp/restore... " + Style.RESET_ALL
+error = subprocess.check_call(args);
+
+# rsync /tmp/restore/ to vars.site_path 
+command = "rsync -ruv /tmp/restore/ " + vars.site_path
+args = [ "ssh", userAtServer, command ]
+print Style.BRIGHT + "\nLaunching " + Fore.GREEN + " ".join(args) + Fore.RESET + " to copy files from /tmp/restore to the destination... " + Style.RESET_ALL
 error = subprocess.check_call(args);
 
 # Define a drush sql-cli command to restore the database

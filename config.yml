@@ -13,10 +13,10 @@ vagrant_synced_folders:
     destination: /var/www/drupalvm
     type: nfs
     create: true
-  - local_path: .
-    destination: /tmp/sync
-    type: nfs
-    create: true
+#  - local_path: .
+#    destination: /tmp/sync
+#    type: nfs
+#    create: true
 
 extra_packages:
   - sqlite
