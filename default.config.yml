@@ -103,7 +103,7 @@ configure_drush_aliases: true
 # View the geerlingguy.apache Ansible Role README for more options.
 apache_vhosts:
   - servername: "{{ drupal_domain }}"
-    serveralias: "www.{{ drupal_domain }}"
+    # serveralias: "www.{{ drupal_domain }}"   # Don't define this alias!  It causes multiple entries in the drush alias file and that can be problematic.
     documentroot: "{{ drupal_core_path }}"
     extra_parameters: |
           ProxyPassMatch ^/(.*\.php(/.*)?)$ "fcgi://127.0.0.1:9000{{ drupal_core_path }}"
