@@ -22,6 +22,16 @@ cwd = os.getcwd()
 userAtServer = vars.user + "@" + vars.server
 path = "/home/" + vars.user + "/" + vars.backup
 
+# If stick is mounted, copy the latest backup from there to the current directory
+if os.path.isdir(vars.stick):
+    stick_path = max(glob.iglob(vars.stick + "/" + vars.backup + '*'), key=os.path.getctime)
+    args = ["rsync", "-aruvi", stick_path, cwd]
+    print Style.BRIGHT + "\nRunning " + Fore.GREEN + ' '.join(args) + Fore.RESET + " to copy the latest backup from your mounted " + vars.stick + " volume..."  + Style.RESET_ALL
+    error = subprocess.check_call(args)
+
+else:
+    print Style.BRIGHT + "\nMount a portable drive at " + vars.stick + " to pull backups for restoration."
+
 # Find the latest file matching the backup* filename pattern
 file_path = max(glob.iglob(vars.backup + '*'), key=os.path.getctime)
 
